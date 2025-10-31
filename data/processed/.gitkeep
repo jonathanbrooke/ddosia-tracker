@@ -1,0 +1,6 @@
+# Processed Files Directory
+
+This directory stores processed JSON files from the DDoSia target lists.
+Files are automatically moved here after processing.
+
+Note: Files in this directory are not tracked by git.

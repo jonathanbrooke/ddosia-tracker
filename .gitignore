@@ -1,0 +1,90 @@
+# ============================================================================
+# DDoSia Tracker - Git Ignore Configuration
+# ============================================================================
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Database data (generated)
+pgdata/
+
+# Downloaded and processed data (generated)
+data/downloads/*.json
+data/pending/*.json
+data/processed/*.json
+data/downloads/*.part
+data/pending/*.part
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+*.bak
+*.old
+.cache/
+tmp/
+
+# Docker
+*.pid
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backup files from code refactoring
+*.example.old

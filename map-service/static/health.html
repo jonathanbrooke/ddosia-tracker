@@ -1,0 +1,695 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>System Health - DDoSia Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0a0e27;
+      --bg-secondary: #151932;
+      --bg-tertiary: #1a1f3a;
+      --border-color: #2a3050;
+      --text-primary: #e8eaf0;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    }
+    
+    [data-theme="light"] {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e7eb;
+      --border-color: #d1d5db;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    /* Header */
+    #header {
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    
+    .logo::before {
+      content: "⚠";
+      font-size: 24px;
+    }
+    
+    .header-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 16px;
+      margin-left: 32px;
+    }
+    
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .nav-link:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+    
+    .nav-link.active {
+      background: var(--accent-cyan);
+      color: white;
+    }
+    
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .refresh-status {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Roboto Mono', monospace;
+    }
+    
+    /* Theme Toggle */
+    #theme-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    #theme-toggle:hover {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      transform: rotate(20deg) scale(1.1);
+    }
+    
+    #theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+    
+    #theme-toggle:hover svg {
+      fill: white;
+    }
+    
+    /* Main Content */
+    #content {
+      padding: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    /* Status Overview Cards */
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .status-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+    
+    .status-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .status-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-badge.healthy {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-green);
+    }
+    
+    .status-badge.warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent-yellow);
+    }
+    
+    .status-badge.error {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+    }
+    
+    .status-badge.idle {
+      background: rgba(107, 114, 128, 0.2);
+      color: var(--text-muted);
+    }
+    
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+    
+    .metric-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    
+    .metric-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: 'Roboto Mono', monospace;
+    }
+    
+    .metric-value.accent {
+      color: var(--accent-cyan);
+    }
+    
+    /* Docker Services */
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .service-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .service-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .service-details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    
+    .service-metric {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+      font-family: 'Roboto Mono', monospace;
+      font-size: 11px;
+    }
+    
+    /* Issues Section */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .issue-count {
+      background: var(--accent-red);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .issues-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    
+    .issue-item {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .issue-item:last-child {
+      border-bottom: none;
+    }
+    
+    .issue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    
+    .issue-message {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .issue-type {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    
+    .issue-details {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-family: 'Roboto Mono', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .tld-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .tld-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 8px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+    }
+    
+    .tld-name {
+      color: var(--accent-cyan);
+    }
+    
+    .tld-count {
+      color: var(--text-muted);
+    }
+    
+    /* Empty State */
+    .empty-state {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .empty-state-message {
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    /* Loading Animation */
+    .loading {
+      opacity: 0.6;
+    }
+    
+    .pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Scrollbar */
+    .issue-details::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .issue-details::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    
+    .issue-details::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    
+    .issue-details::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div class="header-left">
+      <a href="/" class="logo">DDoSia Tracker</a>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">Map</a>
+        <a href="/health" class="nav-link active">Health</a>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="refresh-status" id="refresh-status">Loading...</div>
+      <button id="theme-toggle" title="Toggle theme">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="content">
+    <!-- Overview Section -->
+    <div class="overview-grid" id="overview-grid">
+      <!-- Cards will be inserted here -->
+    </div>
+
+    <!-- Docker Services Section -->
+    <div class="section-header">
+      <h2 class="section-title">Docker Services</h2>
+    </div>
+    <div class="services-grid" id="services-grid">
+      <!-- Service cards will be inserted here -->
+    </div>
+
+    <!-- Issues Section -->
+    <div class="section-header">
+      <h2 class="section-title">Issues & Warnings</h2>
+      <div class="issue-count" id="issue-count">0</div>
+    </div>
+    <div class="issues-container" id="issues-container">
+      <!-- Issues will be inserted here -->
+    </div>
+  </div>
+
+  <script>
+    // Theme management
+    const themeToggle = document.getElementById('theme-toggle');
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    themeToggle.addEventListener('click', () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+
+    // Fetch and update health data
+    async function fetchHealthData() {
+      try {
+        const [overview, docker, issues] = await Promise.all([
+          fetch('/api/health/overview').then(r => r.json()),
+          fetch('/api/health/docker').then(r => r.json()),
+          fetch('/api/health/issues').then(r => r.json())
+        ]);
+
+        updateOverview(overview);
+        updateDockerServices(docker);
+        updateIssues(issues);
+        
+        const now = new Date();
+        document.getElementById('refresh-status').textContent = 
+          `Updated ${now.toLocaleTimeString()}`;
+      } catch (error) {
+        console.error('Error fetching health data:', error);
+        document.getElementById('refresh-status').textContent = 'Error loading data';
+      }
+    }
+
+    function updateOverview(data) {
+      const grid = document.getElementById('overview-grid');
+      
+      const cards = [
+        {
+          title: 'Database',
+          status: data.database.status,
+          metrics: [
+            { label: 'Status', value: data.database.status.toUpperCase() }
+          ]
+        },
+        {
+          title: 'Data Imports',
+          status: data.imports.status,
+          metrics: [
+            { label: 'Files (Today)', value: data.imports.files_today || 0 },
+            { label: 'Last Import', value: formatRelativeTime(data.imports.last_import) }
+          ]
+        },
+        {
+          title: 'TLD Mapping',
+          status: data.tld_mapping.status,
+          metrics: [
+            { label: 'Coverage', value: `${data.tld_mapping.coverage_percent}%`, accent: true },
+            { label: 'Mapped Hosts', value: data.tld_mapping.mapped_hosts },
+            { label: 'Unmapped Hosts', value: data.tld_mapping.unmapped_hosts }
+          ]
+        },
+        {
+          title: 'Data Quality',
+          status: data.data_quality.status,
+          metrics: [
+            { label: 'Quality Score', value: `${data.data_quality.quality_percent}%`, accent: true },
+            { label: 'Total Targets', value: data.data_quality.total_targets },
+            { label: 'Missing Hosts', value: data.data_quality.missing_hosts },
+            { label: 'Duplicates', value: data.data_quality.duplicates }
+          ]
+        }
+      ];
+
+      grid.innerHTML = cards.map(card => `
+        <div class="status-card">
+          <div class="status-card-header">
+            <div class="status-card-title">${card.title}</div>
+            <div class="status-badge ${card.status}">${card.status}</div>
+          </div>
+          ${card.metrics.map(m => `
+            <div class="metric-row">
+              <div class="metric-label">${m.label}</div>
+              <div class="metric-value ${m.accent ? 'accent' : ''}">${m.value}</div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    function updateDockerServices(data) {
+      const grid = document.getElementById('services-grid');
+      
+      const services = [
+        {
+          name: 'Downloader',
+          status: data.downloader.status,
+          details: `${data.downloader.recent_files || 0} files today`,
+          lastActivity: data.downloader.last_activity
+        },
+        {
+          name: 'Processor',
+          status: data.processor.status,
+          details: `${data.processor.recent_targets || 0} targets today`,
+          lastActivity: data.processor.last_activity
+        },
+        {
+          name: 'Map Updater',
+          status: data.map_updater.status,
+          details: `${data.map_updater.mapped_count || 0} / ${data.map_updater.total_count || 0} mapped today`,
+          lastActivity: null
+        },
+        {
+          name: 'GDELT Worker',
+          status: data.gdelt_worker.status,
+          details: `${data.gdelt_worker.recent_events || 0} events today`,
+          lastActivity: data.gdelt_worker.last_activity
+        }
+      ];
+
+      grid.innerHTML = services.map(service => `
+        <div class="service-card">
+          <div class="service-header">
+            <div class="service-name">${service.name}</div>
+            <div class="status-badge ${service.status}">${service.status}</div>
+          </div>
+          <div class="service-details">${service.details}</div>
+          ${service.lastActivity ? `
+            <div class="service-metric">
+              Last activity: ${formatRelativeTime(service.lastActivity)}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function updateIssues(data) {
+      const container = document.getElementById('issues-container');
+      const countBadge = document.getElementById('issue-count');
+      
+      countBadge.textContent = data.total_issues || 0;
+      
+      if (!data.issues || data.issues.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">✅</div>
+            <div class="empty-state-message">No issues detected</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = data.issues.map(issue => `
+        <div class="issue-item">
+          <div class="issue-header">
+            <div>
+              <div class="issue-message">${issue.message}</div>
+              <div class="issue-type">${issue.type}</div>
+            </div>
+            <div class="status-badge ${issue.severity}">${issue.severity}</div>
+          </div>
+          ${formatIssueDetails(issue)}
+        </div>
+      `).join('');
+    }
+
+    function formatIssueDetails(issue) {
+      if (!issue.details) return '';
+      
+      if (issue.type === 'tld_mapping' && Array.isArray(issue.details)) {
+        return `
+          <div class="issue-details">
+            <div class="tld-list">
+              ${issue.details.map(tld => `
+                <div class="tld-item">
+                  <span class="tld-name">.${tld.tld}</span>
+                  <span class="tld-count">${tld.count}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      
+      return `
+        <div class="issue-details">
+          ${JSON.stringify(issue.details, null, 2)}
+        </div>
+      `;
+    }
+
+    function formatRelativeTime(isoString) {
+      if (!isoString) return 'Never';
+      
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffSeconds = Math.floor((now - date) / 1000);
+      
+      if (diffSeconds < 60) return 'Just now';
+      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}m ago`;
+      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}h ago`;
+      if (diffSeconds < 604800) return `${Math.floor(diffSeconds / 86400)}d ago`;
+      return `${Math.floor(diffSeconds / 604800)}w ago`;
+    }
+
+    // Initial load and auto-refresh
+    fetchHealthData();
+    setInterval(fetchHealthData, 30000); // Refresh every 30 seconds
+  </script>
+</body>
+</html>

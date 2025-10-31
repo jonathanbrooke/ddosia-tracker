@@ -1,0 +1,276 @@
+{
+  "events": [
+    {
+      "date": "2023-01-25",
+      "title": "Western tanks pledged to Ukraine",
+      "description": "US, Germany, and UK announce delivery of main battle tanks (Abrams, Leopard, Challenger) to Ukraine",
+      "category": "military",
+      "countries": ["UA", "US", "DE", "GB"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-02-24",
+      "title": "One year of Russia-Ukraine war",
+      "description": "First anniversary of Russian invasion marked by international pledges of continued support for Ukraine",
+      "category": "political",
+      "countries": ["RU", "UA"],
+      "severity": "medium"
+    },
+    {
+      "date": "2023-03-17",
+      "title": "ICC issues arrest warrant for Putin",
+      "description": "International Criminal Court issues arrest warrant for Vladimir Putin for alleged war crimes in Ukraine",
+      "category": "political",
+      "countries": ["RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-05-21",
+      "title": "Bakhmut falls to Russian forces",
+      "description": "Russian forces capture Bakhmut after months of intense fighting, Wagner Group claims victory",
+      "category": "conflict",
+      "countries": ["RU", "UA"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-06-06",
+      "title": "Kakhovka Dam destruction",
+      "description": "Kakhovka Dam in southern Ukraine destroyed, causing massive flooding and humanitarian crisis",
+      "category": "conflict",
+      "countries": ["UA"],
+      "severity": "critical"
+    },
+    {
+      "date": "2023-06-23",
+      "title": "Wagner mutiny",
+      "description": "Wagner Group chief Prigozhin launches armed rebellion against Russian military leadership, briefly advancing toward Moscow",
+      "category": "political",
+      "countries": ["RU"],
+      "severity": "critical"
+    },
+    {
+      "date": "2023-07-11",
+      "title": "Finland joins NATO",
+      "description": "Finland officially becomes 31st member of NATO alliance, doubling NATO's border with Russia",
+      "category": "political",
+      "countries": ["FI", "RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-08-23",
+      "title": "Prigozhin killed in plane crash",
+      "description": "Wagner Group leader Yevgeny Prigozhin dies in suspicious plane crash northwest of Moscow",
+      "category": "political",
+      "countries": ["RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-09-14",
+      "title": "Ukraine strikes Sevastopol naval base",
+      "description": "Ukrainian missile strike damages Russian Black Sea Fleet headquarters in occupied Crimea",
+      "category": "conflict",
+      "countries": ["UA", "RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2023-10-07",
+      "title": "Hamas attacks Israel",
+      "description": "Hamas launches surprise attack on Israel from Gaza, killing over 1,200 people in deadliest day in Israeli history",
+      "category": "conflict",
+      "countries": ["IL", "PS"],
+      "severity": "critical"
+    },
+    {
+      "date": "2023-10-09",
+      "title": "Israel declares war on Hamas",
+      "description": "Israel formally declares war on Hamas and begins military operations in Gaza Strip",
+      "category": "conflict",
+      "countries": ["IL", "PS"],
+      "severity": "critical"
+    },
+    {
+      "date": "2023-10-27",
+      "title": "Israel ground invasion of Gaza",
+      "description": "Israeli forces launch major ground offensive into Gaza Strip with large-scale military operations",
+      "category": "conflict",
+      "countries": ["IL", "PS"],
+      "severity": "critical"
+    },
+    {
+      "date": "2023-11-22",
+      "title": "Israel-Hamas temporary ceasefire",
+      "description": "First temporary ceasefire begins with hostage and prisoner exchanges",
+      "category": "political",
+      "countries": ["IL", "PS"],
+      "severity": "medium"
+    },
+    {
+      "date": "2023-12-26",
+      "title": "Russian missile strikes across Ukraine",
+      "description": "Russia launches massive coordinated missile and drone attacks on Ukrainian cities during holiday period",
+      "category": "conflict",
+      "countries": ["RU", "UA"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-01-01",
+      "title": "EU imposes 12th sanctions package on Russia",
+      "description": "European Union implements comprehensive new sanctions targeting Russian economy and military industry",
+      "category": "sanctions",
+      "countries": ["RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-01-10",
+      "title": "Houthi attacks in Red Sea escalate",
+      "description": "Yemen-based Houthis intensify attacks on commercial shipping in Red Sea, disrupting global trade",
+      "category": "conflict",
+      "countries": ["YE", "US"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-02-17",
+      "title": "Navalny dies in Russian prison",
+      "description": "Russian opposition leader Alexei Navalny dies in Arctic penal colony under suspicious circumstances",
+      "category": "political",
+      "countries": ["RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-02-24",
+      "title": "Two years of Russia-Ukraine war",
+      "description": "Second anniversary of Russian invasion as conflict continues with no clear resolution",
+      "category": "political",
+      "countries": ["RU", "UA"],
+      "severity": "medium"
+    },
+    {
+      "date": "2024-03-07",
+      "title": "Sweden joins NATO",
+      "description": "Sweden becomes 32nd member of NATO, completing Nordic expansion of the alliance",
+      "category": "political",
+      "countries": ["SE", "RU"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-03-15",
+      "title": "Putin wins Russian election",
+      "description": "Vladimir Putin secures fifth presidential term with 87% of vote in internationally disputed election",
+      "category": "political",
+      "countries": ["RU"],
+      "severity": "medium"
+    },
+    {
+      "date": "2024-03-22",
+      "title": "Moscow concert hall attack",
+      "description": "Terrorist attack on Crocus City Hall near Moscow kills over 140 people in deadliest attack in Russia in decades",
+      "category": "terrorism",
+      "countries": ["RU"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-04-13",
+      "title": "Iran strikes Israel directly",
+      "description": "Iran launches over 300 missiles and drones at Israel in first direct attack, mostly intercepted",
+      "category": "conflict",
+      "countries": ["IR", "IL"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-04-24",
+      "title": "US approves $61B Ukraine aid package",
+      "description": "United States Congress approves major military and economic aid package for Ukraine after months of delay",
+      "category": "military",
+      "countries": ["UA", "US"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-05-16",
+      "title": "Russia opens new front in Kharkiv",
+      "description": "Russian forces launch major offensive in northeastern Kharkiv region opening new front line",
+      "category": "conflict",
+      "countries": ["RU", "UA"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-05-19",
+      "title": "Iran President dies in helicopter crash",
+      "description": "Iranian President Ebrahim Raisi killed in helicopter crash in northern Iran",
+      "category": "political",
+      "countries": ["IR"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-06-14",
+      "title": "G7 approves $50B Ukraine loan",
+      "description": "G7 nations agree to provide $50 billion loan to Ukraine backed by frozen Russian assets",
+      "category": "sanctions",
+      "countries": ["UA"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-07-11",
+      "title": "NATO summit pledges Ukraine support",
+      "description": "NATO leaders pledge irreversible path to Ukraine membership at 75th anniversary summit in Washington",
+      "category": "political",
+      "countries": ["UA"],
+      "severity": "medium"
+    },
+    {
+      "date": "2024-07-31",
+      "title": "Hamas leader Haniyeh assassinated",
+      "description": "Hamas political leader Ismail Haniyeh killed in Tehran, Iran blames Israel",
+      "category": "conflict",
+      "countries": ["IL", "IR", "PS"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-08-06",
+      "title": "Ukraine invades Kursk region",
+      "description": "Ukrainian forces launch surprise cross-border offensive into Russia's Kursk Oblast, first invasion of Russia since WWII",
+      "category": "conflict",
+      "countries": ["UA", "RU"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-09-17",
+      "title": "Lebanon pager attacks",
+      "description": "Mass coordinated explosions of Hezbollah communications devices across Lebanon kills dozens",
+      "category": "conflict",
+      "countries": ["IL", "LB"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-09-27",
+      "title": "Hezbollah leader Nasrallah killed",
+      "description": "Israeli airstrike in Beirut kills Hezbollah Secretary-General Hassan Nasrallah",
+      "category": "conflict",
+      "countries": ["IL", "LB"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-10-01",
+      "title": "Iran ballistic missile strike on Israel",
+      "description": "Iran launches approximately 180 ballistic missiles at Israel in large-scale retaliation",
+      "category": "conflict",
+      "countries": ["IR", "IL"],
+      "severity": "critical"
+    },
+    {
+      "date": "2024-10-17",
+      "title": "Sinwar killed in Gaza",
+      "description": "Hamas leader Yahya Sinwar killed by Israeli forces in Gaza, major blow to Hamas leadership",
+      "category": "conflict",
+      "countries": ["IL", "PS"],
+      "severity": "high"
+    },
+    {
+      "date": "2024-10-26",
+      "title": "Israel strikes Iran",
+      "description": "Israel conducts airstrikes on Iranian military targets in response to ballistic missile attacks",
+      "category": "conflict",
+      "countries": ["IL", "IR"],
+      "severity": "critical"
+    }
+  ]
+}

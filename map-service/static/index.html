@@ -1,0 +1,1021 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DDoSia Target Tracker - SOC Dashboard</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    :root {
+      --bg-primary: #0a0e27;
+      --bg-secondary: #151932;
+      --bg-tertiary: #1a1f3a;
+      --border-color: #2a3050;
+      --text-primary: #e8eaf0;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+      --map-tiles: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+    }
+    
+    [data-theme="light"] {
+      --bg-primary: #f5f7fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e7eb;
+      --border-color: #d1d5db;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #6b7280;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --map-tiles: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    }
+    
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+    }
+    
+    /* Header */
+    #header {
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .logo {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .logo::before {
+      content: "⚠";
+      font-size: 24px;
+    }
+    
+    .header-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 16px;
+      margin-left: 32px;
+    }
+    
+    .nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    
+    .nav-link:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+    
+    .nav-link.active {
+      background: var(--accent-cyan);
+      color: white;
+    }
+    
+    .header-stats {
+      display: flex;
+      gap: 24px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 12px;
+    }
+    
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .stat-label {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+    }
+    
+    .stat-value {
+      color: var(--accent-cyan);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    /* Controls */
+    #controls {
+      padding: 12px 24px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+    
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    input[type="date"],
+    input[type="number"] {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: 'Roboto Mono', monospace;
+      transition: border-color 0.2s;
+    }
+    
+    input[type="date"]:focus,
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+    
+    button {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    button:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    #btn-today,
+    #btn-week {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+    }
+    
+    #btn-today:hover,
+    #btn-week:hover {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+    
+    .status-badge {
+      background: var(--bg-tertiary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      margin-left: auto;
+    }
+    
+    /* Theme Toggle */
+    #theme-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 0;
+      margin-left: 16px;
+    }
+    
+    #theme-toggle:hover {
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      transform: rotate(20deg) scale(1.1);
+    }
+    
+    #theme-toggle svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+    
+    #theme-toggle:hover svg {
+      fill: white;
+    }
+    
+    /* Content Area */
+    #content {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+      gap: 0;
+    }
+    
+    /* Map */
+    #map-container {
+      flex: 0 0 70%;
+      position: relative;
+      background: var(--bg-tertiary);
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+    }
+    
+    .leaflet-container {
+      background: var(--bg-primary);
+    }
+    
+    /* Sidebar */
+    #sidebar {
+      flex: 0 0 30%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .sidebar-header {
+      padding: 16px 20px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .sidebar-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    
+    .sidebar-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'Roboto Mono', monospace;
+    }
+    
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    
+    thead {
+      position: sticky;
+      top: 0;
+      background: var(--bg-tertiary);
+      z-index: 10;
+    }
+    
+    th {
+      padding: 12px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-family: 'Roboto Mono', monospace;
+    }
+    
+    tr:hover {
+      background: var(--bg-tertiary);
+      cursor: pointer;
+    }
+    
+    .count-cell {
+      text-align: right;
+      font-weight: 600;
+      color: var(--accent-cyan);
+    }
+    
+    .domain-cell {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .country-cell {
+      color: var(--text-secondary);
+    }
+    
+    /* Scrollbar */
+    .table-container::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .table-container::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    
+    .table-container::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    
+    .table-container::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-blue);
+    }
+    
+    /* Loading State */
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Leaflet Popup Styling */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+    }
+    
+    .leaflet-popup-content {
+      margin: 12px;
+      font-size: 13px;
+    }
+    
+    .leaflet-popup-tip {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+    }
+    
+    /* Events Timeline */
+    #events-timeline {
+      margin-top: 20px;
+      padding: 15px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    #events-timeline h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      background: var(--bg-tertiary);
+      padding: 10px 0;
+      z-index: 1;
+    }
+    
+    .event-item {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: var(--bg-secondary);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 4px;
+      transition: all 0.2s;
+      border: 1px solid var(--border-color);
+    }
+    
+    .event-item:hover {
+      background: var(--bg-primary);
+      transform: translateX(2px);
+    }
+    
+    .event-item.severity-critical {
+      border-left-color: #ef4444;
+    }
+    
+    .event-item.severity-high {
+      border-left-color: #f59e0b;
+    }
+    
+    .event-item.severity-medium {
+      border-left-color: #3b82f6;
+    }
+    
+    .event-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Roboto Mono', monospace;
+      margin-bottom: 4px;
+    }
+    
+    .event-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .event-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    
+    .event-category {
+      display: inline-block;
+      padding: 2px 8px;
+      margin-top: 6px;
+      font-size: 10px;
+      background: rgba(6, 182, 212, 0.2);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: 3px;
+      color: #06b6d4;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    
+    .event-category.conflict { 
+      background: rgba(239, 68, 68, 0.2); 
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+    
+    .event-category.sanctions { 
+      background: rgba(245, 158, 11, 0.2); 
+      border-color: rgba(245, 158, 11, 0.3);
+      color: #f59e0b;
+    }
+    
+    .event-category.political { 
+      background: rgba(59, 130, 246, 0.2); 
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #3b82f6;
+    }
+    
+    .event-category.cyber { 
+      background: rgba(168, 85, 247, 0.2); 
+      border-color: rgba(168, 85, 247, 0.3);
+      color: #a855f7;
+    }
+    
+    .event-category.military { 
+      background: rgba(239, 68, 68, 0.2); 
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+    
+    .event-category.terrorism { 
+      background: rgba(220, 38, 38, 0.2); 
+      border-color: rgba(220, 38, 38, 0.3);
+      color: #dc2626;
+    }
+    
+    .event-category.gdelt { 
+      background: rgba(34, 197, 94, 0.2); 
+      border-color: rgba(34, 197, 94, 0.3);
+      color: #22c55e;
+    }
+    
+    .event-source {
+      display: inline-block;
+      padding: 2px 6px;
+      margin-left: 6px;
+      font-size: 9px;
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    
+    .event-source.gdelt {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1200px) {
+      #map-container { flex: 0 0 60%; }
+      #sidebar { flex: 0 0 40%; }
+    }
+    
+    @media (max-width: 768px) {
+      #content { flex-direction: column; }
+      #map-container, #sidebar { flex: 1 0 50%; }
+    }
+  </style>
+</head>
+<body>
+<body>
+  <!-- Header -->
+  <div id="header">
+    <div class="header-left">
+      <div class="logo">DDoSia Tracker</div>
+      <nav class="nav-links">
+        <a href="/" class="nav-link active">Map</a>
+        <a href="/health" class="nav-link">Health</a>
+      </nav>
+    </div>
+    <div class="header-stats">
+      <div class="stat-item">
+        <div class="stat-label">Countries</div>
+        <div class="stat-value" id="stat-countries">—</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Domains</div>
+        <div class="stat-value" id="stat-domains">—</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Targets</div>
+        <div class="stat-value" id="stat-targets">—</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Last Update</div>
+        <div class="stat-value" id="stat-last-update" style="font-size: 14px;">—</div>
+      </div>
+      <button id="theme-toggle" title="Toggle dark/light mode">
+        <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+        </svg>
+        <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <div class="control-group">
+      <label>From:</label>
+      <input id="from" type="date"/>
+    </div>
+    <div class="control-group">
+      <label>To:</label>
+      <input id="to" type="date"/>
+    </div>
+    <div class="control-group">
+      <label>Min Count:</label>
+      <input id="min" type="number" value="1" min="1" style="width: 80px;"/>
+    </div>
+    <button id="apply">Apply Filters</button>
+    <button id="btn-today">Today</button>
+    <button id="btn-week">This Week</button>
+    <div class="status-badge" id="status">Initializing...</div>
+  </div>
+
+  <!-- Content -->
+  <div id="content">
+    <div id="map-container">
+      <div id="map"></div>
+    </div>
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Targeted Domains</div>
+        <div class="sidebar-info" id="table-info">Loading data...</div>
+      </div>
+      <div class="table-container">
+        <table id="domains-table" aria-live="polite">
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Country</th>
+              <th style="text-align: right;">Count</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Geopolitical Events Timeline -->
+      <div id="events-timeline">
+        <h3>
+          <span>📅</span>
+          Geopolitical Events
+        </h3>
+        <div id="events-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Initialize map with dark tiles
+    const map = L.map('map', {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([20, 0], 2);
+    
+    // Tile layer reference for theme switching
+    let tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+      attribution: '© CARTO'
+    }).addTo(map);
+
+    let geoLayer = null;
+    let countryCounts = {};
+    let maxCount = 0;
+    let totalTargets = 0;
+    
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const moonIcon = document.getElementById('theme-icon-moon');
+    const sunIcon = document.getElementById('theme-icon-sun');
+    const html = document.documentElement;
+    
+    // Load saved theme or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+      html.setAttribute('data-theme', 'light');
+      moonIcon.style.display = 'none';
+      sunIcon.style.display = 'block';
+      updateMapTiles('light');
+    }
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      if (newTheme === 'light') {
+        moonIcon.style.display = 'none';
+        sunIcon.style.display = 'block';
+        updateMapTiles('light');
+      } else {
+        moonIcon.style.display = 'block';
+        sunIcon.style.display = 'none';
+        updateMapTiles('dark');
+      }
+    });
+    
+    function updateMapTiles(theme) {
+      const tileUrl = theme === 'light' 
+        ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+      
+      map.removeLayer(tileLayer);
+      tileLayer = L.tileLayer(tileUrl, {
+        maxZoom: 18,
+        attribution: '© CARTO'
+      }).addTo(map);
+    }
+
+    // Date helpers
+    function formatISODate(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function setTodayRange() {
+      const today = new Date();
+      const iso = formatISODate(today);
+      document.getElementById('from').value = iso;
+      document.getElementById('to').value = iso;
+    }
+
+    function setThisWeekRange() {
+      const today = new Date();
+      const dow = today.getDay();
+      const diffToMonday = (dow === 0) ? -6 : (1 - dow);
+      const monday = new Date(today);
+      monday.setDate(today.getDate() + diffToMonday);
+      document.getElementById('from').value = formatISODate(monday);
+      document.getElementById('to').value = formatISODate(today);
+    }
+
+    async function fetchRange() {
+      const res = await fetch('/api/tld/available-range');
+      return res.json();
+    }
+
+    async function fetchCountryCounts(from, to, minCount) {
+      const q = new URLSearchParams({from, to, min_count: String(minCount)});
+      const res = await fetch('/api/country?' + q.toString());
+      return res.json();
+    }
+
+    async function fetchDomains(from, to, limit=500) {
+      const q = new URLSearchParams({from, to, limit: String(limit)});
+      const res = await fetch('/api/domains?' + q.toString());
+      return res.json();
+    }
+
+    async function fetchEvents(from, to) {
+      const q = new URLSearchParams({from, to});
+      const res = await fetch('/api/events?' + q.toString());
+      return res.json();
+    }
+
+    async function fetchLastUpdate() {
+      try {
+        const res = await fetch('/api/last-update');
+        const data = await res.json();
+        if (data.last_update_relative) {
+          document.getElementById('stat-last-update').textContent = data.last_update_relative;
+          document.getElementById('stat-last-update').title = data.last_update;
+        }
+      } catch (e) {
+        console.error('Failed to fetch last update:', e);
+      }
+    }
+
+    function getColor(count) {
+      if (!count || maxCount === 0) return 'rgba(42, 48, 80, 0.3)';
+      
+      // Use logarithmic scaling for better visibility of low counts
+      // Add 1 to avoid log(0), and use log base 10
+      const logCount = Math.log10(count + 1);
+      const logMax = Math.log10(maxCount + 1);
+      const t = Math.min(1, logCount / logMax);
+      
+      // Ensure minimum visibility for any non-zero count
+      const minT = 0.3; // Minimum 30% intensity for any country with targets
+      const adjustedT = minT + (1 - minT) * t;
+      
+      const r = Math.floor(239 * adjustedT);
+      const g = Math.floor(68 * (1 - adjustedT * 0.7));
+      const b = Math.floor(68 * (1 - adjustedT * 0.7));
+      const alpha = 0.6 + 0.4 * adjustedT;
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function styleFeature(feature) {
+      const name = feature.properties && (feature.properties.name || feature.properties.ADMIN || feature.properties.NAME);
+      const cnt = countryCounts[name] || 0;
+      return {
+        fillColor: getColor(cnt),
+        weight: 1,
+        opacity: 0.6,
+        color: '#4a5568',
+        fillOpacity: 0.8
+      };
+    }
+
+    function onEachFeature(feature, layer) {
+      const name = feature.properties && (feature.properties.name || feature.properties.ADMIN || feature.properties.NAME) || 'unknown';
+      const cnt = countryCounts[name] || 0;
+      layer.on({
+        mouseover: function(e) {
+          e.target.setStyle({weight:2, color:'#06b6d4', opacity: 1});
+        },
+        mouseout: function(e) {
+          geoLayer.resetStyle(e.target);
+        }
+      });
+      layer.bindPopup(`<strong style="color: #06b6d4; font-size: 14px;">${name}</strong><br/><span style="color: #9ca3af;">Targets: <strong style="color: #06b6d4;">${cnt.toLocaleString()}</strong></span>`);
+    }
+
+    function updateStats(countries, domains, targets) {
+      document.getElementById('stat-countries').textContent = countries.toLocaleString();
+      document.getElementById('stat-domains').textContent = domains.toLocaleString();
+      document.getElementById('stat-targets').textContent = targets.toLocaleString();
+    }
+
+    function clearTable() {
+      const tb = document.querySelector('#domains-table tbody');
+      tb.innerHTML = '';
+    }
+
+    function renderTable(rows) {
+      const tb = document.querySelector('#domains-table tbody');
+      tb.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="domain-cell">${r.domain}</td>
+          <td class="country-cell">${r.country}</td>
+          <td class="count-cell">${r.count.toLocaleString()}</td>
+        `;
+        tr.addEventListener('click', () => {
+          const name = r.country;
+          let found = null;
+          geoLayer.eachLayer(layer => {
+            const props = layer.feature && (layer.feature.properties.name || layer.feature.properties.ADMIN || layer.feature.properties.NAME);
+            if (!found && props && props.toLowerCase() === name.toLowerCase()) found = layer;
+          });
+          if (found) {
+            map.fitBounds(found.getBounds().pad(0.2));
+            found.openPopup();
+          }
+        });
+        tb.appendChild(tr);
+      });
+      document.getElementById('table-info').textContent = `${rows.length} domains • Click to zoom`;
+    }
+
+    function renderEvents(events) {
+      const container = document.getElementById('events-list');
+      
+      if (!events || events.length === 0) {
+        container.innerHTML = '<div style="color:#94a3b8; padding: 10px; font-size: 12px;">No major events recorded in this period</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      events.forEach(evt => {
+        const div = document.createElement('div');
+        div.className = `event-item severity-${evt.severity || 'medium'}`;
+        
+        const sourceBadge = evt.source === 'gdelt' 
+          ? '<span class="event-source gdelt">GDELT</span>' 
+          : '<span class="event-source">Curated</span>';
+        
+        // Only show category if it's not 'gdelt' (to avoid duplication with source badge)
+        const categoryTag = evt.category && evt.category !== 'gdelt'
+          ? `<span class="event-category ${evt.category}">${evt.category}</span>`
+          : '';
+        
+        div.innerHTML = `
+          <div class="event-date">${evt.date} ${sourceBadge}</div>
+          <div class="event-title">${evt.title}</div>
+          <div class="event-description">${evt.description}</div>
+          ${categoryTag}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    async function loadAndRenderCountries(from, to, minCount) {
+      document.getElementById('status').textContent = 'Loading...';
+      document.getElementById('status').classList.add('pulse');
+      
+      const rows = await fetchCountryCounts(from, to, minCount);
+      if (rows.error) {
+        document.getElementById('status').textContent = 'Error: ' + rows.error;
+        document.getElementById('status').classList.remove('pulse');
+        return;
+      }
+
+      countryCounts = {};
+      maxCount = 0;
+      totalTargets = 0;
+      rows.forEach(r => {
+        countryCounts[r.country] = r.count;
+        totalTargets += r.count;
+        if (r.count > maxCount) maxCount = r.count;
+      });
+
+      const geoUrl = '/static/countries.geo.json';
+      let geoJson;
+      try {
+        const geoRes = await fetch(geoUrl);
+        geoJson = await geoRes.json();
+      } catch (e) {
+        const geoRes = await fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json');
+        geoJson = await geoRes.json();
+      }
+
+      if (geoLayer) map.removeLayer(geoLayer);
+      geoLayer = L.geoJSON(geoJson, {style: styleFeature, onEachFeature: onEachFeature}).addTo(map);
+      
+      document.getElementById('status').textContent = `Data updated • ${from} to ${to}`;
+      document.getElementById('status').classList.remove('pulse');
+    }
+
+    async function loadAndRenderDomains(from, to) {
+      document.getElementById('table-info').textContent = 'Loading domains...';
+      const rows = await fetchDomains(from, to, 500);
+      if (rows.error) {
+        document.getElementById('table-info').textContent = 'Error: ' + rows.error;
+        return;
+      }
+      renderTable(rows);
+      
+      // Also load and render geopolitical events
+      const events = await fetchEvents(from, to);
+      renderEvents(events);
+    }
+
+    async function refreshData() {
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const min = document.getElementById('min').value || 1;
+      
+      await loadAndRenderCountries(from, to, min);
+      await loadAndRenderDomains(from, to);
+      
+      const domainsCount = document.querySelector('#domains-table tbody').children.length;
+      const countriesCount = Object.keys(countryCounts).length;
+      updateStats(countriesCount, domainsCount, totalTargets);
+    }
+
+    // Initialize
+    (async function init(){
+      const range = await fetchRange();
+      if (range.min && range.max) {
+        // Default to today's data
+        setTodayRange();
+        document.getElementById('status').textContent = `Data range: ${range.min} → ${range.max} (showing today)`;
+        await refreshData();
+      } else {
+        setTodayRange();
+        document.getElementById('status').textContent = 'No data available';
+      }
+      
+      // Fetch and display last update time
+      await fetchLastUpdate();
+      // Update last update time every 60 seconds
+      setInterval(fetchLastUpdate, 60000);
+      
+      // Refresh map data every hour (3600000ms)
+      setInterval(refreshData, 3600000);
+    })();
+
+    // Event handlers
+    document.getElementById('btn-today').addEventListener('click', () => {
+      setTodayRange();
+    });
+    
+    document.getElementById('btn-week').addEventListener('click', () => {
+      setThisWeekRange();
+    });
+    
+    document.getElementById('apply').addEventListener('click', refreshData);
+  </script>
+</body>
+</html>
