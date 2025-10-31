@@ -11,6 +11,16 @@ A distributed monitoring and analytics system that tracks DDoSia attack campaign
 - **GDELT Integration**: Correlates attacks with geopolitical events from GDELT news database
 - **Scalable Architecture**: Docker-based microservices with PostgreSQL backend
 
+## 📸 Screenshots
+
+### Interactive Map Dashboard
+![Map Dashboard](screenshots/dashboard.png)
+*Visualize DDoSia attack targets by geographic location with temporal filtering*
+
+### Health Monitoring Dashboard
+![Health Dashboard](screenshots/health.png)
+*Monitor system health, data quality metrics, and service status*
+
 ## 🏗️ Architecture
 
 The system consists of six containerized services:
@@ -75,7 +85,12 @@ The system consists of six containerized services:
 
 4. **Access the applications**
    - **Map Interface**: http://localhost:8000
+     
+     ![Map Dashboard](screenshots/dashboard.png)
+   
    - **Health Dashboard**: http://localhost:8000/health
+     
+     ![Health Dashboard](screenshots/health.png)
 
 ## ⚙️ Configuration
 
