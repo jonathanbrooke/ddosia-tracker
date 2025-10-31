@@ -44,48 +44,84 @@ The system consists of six containerized services:
 - Docker and Docker Compose
 - 4GB+ RAM recommended
 - 10GB+ disk space for data
+- Git LFS (for cloning historical data - optional for basic usage)
 
 ### Installation
 
+#### Option 1: Fresh Start (Recommended for most users)
+
+Download new data as it becomes available:
+
 1. **Clone the repository**
+   ```bash
+   git clone --no-checkout <your-repository-url>
+   cd ddosia-tracker
+   git sparse-checkout init --cone
+   git sparse-checkout set '*' '!data/processed'
+   git checkout
+   ```
+
+2. **Configure environment (optional)**
+   ```bash
+   cp .env.example .env
+   # Edit .env to customize settings if needed (all services work with defaults)
+   ```
+
+3. **Build and start services**
+   ```bash
+   docker compose up -d
+   ```
+
+The system will automatically start downloading and processing new DDoSia target lists.
+
+#### Option 2: With Historical Data (Researchers/Archivists)
+
+For complete historical analysis (requires ~500MB download):
+
+1. **Install Git LFS** (if not already installed)
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install git-lfs
+   
+   # macOS
+   brew install git-lfs
+   
+   # Initialize
+   git lfs install
+   ```
+
+2. **Clone with full history**
    ```bash
    git clone <your-repository-url>
    cd ddosia-tracker
    ```
 
-2. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your preferred settings
-   nano .env
-   ```
-
-3. **Important: Set a secure database password**
-   ```bash
-   # In .env, change this line:
-   POSTGRES_PASSWORD=your_secure_password_here
-   # Also update DATABASE_URL with the same password
-   ```
-
-4. **Build and start services**
+3. **Build and start services**
    ```bash
    docker compose up -d
    ```
 
-5. **Access the applications**
+The historical data will be available immediately for analysis.
+
+### Accessing the Application
+
+4. **Access the applications**
    - **Map Interface**: http://localhost:8000
    - **Health Dashboard**: http://localhost:8000/health
 
 ## ⚙️ Configuration
 
-All configuration is done through environment variables in the `.env` file. See `.env.example` for all available options.
+All configuration is done through environment variables in the `.env` file. The system works out-of-the-box with default settings. See `.env.example` for all available options.
+
+> **Note**: Since all tracked data is publicly available DDoSia attack information, there's no need to change the default database password unless you have specific security requirements for your deployment environment.
 
 ### Key Configuration Options
 
 #### Database Settings
 ```bash
-POSTGRES_PASSWORD=your_secure_password_here  # Change this!
-DATABASE_URL=postgresql://postgres:your_secure_password_here@postgres:5432/ddosia
+# Default credentials work fine for local deployments with public data
+POSTGRES_PASSWORD=postgres
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/ddosia
 ```
 
 #### Downloader Settings
@@ -206,22 +242,20 @@ The Map Updater service will automatically apply changes every 5 minutes.
 
 ### Before Deploying to Production
 
-1. **Change default credentials**
-   - Set a strong `POSTGRES_PASSWORD` in `.env`
-   - Update all `DATABASE_URL` references
+> **Note on Database Security**: Since all tracked data is publicly available DDoSia attack information, the default PostgreSQL password is acceptable for most deployments. The database doesn't contain any sensitive or private data.
 
-2. **Network security**
-   - Use a reverse proxy (nginx, Caddy) with HTTPS
+1. **Network security**
+   - Use a reverse proxy (nginx, Caddy) with HTTPS for public deployments
    - Restrict database access to internal network only
-   - Consider adding API authentication
+   - Consider adding API authentication for public-facing instances
 
-3. **Rate limiting**
+2. **Rate limiting**
    - Configure rate limits for public endpoints
    - Monitor for abuse
 
-4. **Secrets management**
-   - Never commit `.env` file to version control
-   - Use Docker secrets or vault for production deployments
+3. **Optional: Custom database credentials**
+   - If you have specific organizational security policies, you can change `POSTGRES_PASSWORD` in `.env`
+   - Update the password in `DATABASE_URL` to match
 
 ## 🔍 Troubleshooting
 

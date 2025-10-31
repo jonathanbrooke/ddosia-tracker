@@ -11,10 +11,14 @@
 # Database data (generated)
 pgdata/
 
-# Downloaded and processed data (generated)
+# Downloaded and pending data (runtime generated - not tracked)
 data/downloads/*.json
 data/pending/*.json
-data/processed/*.json
+
+# Historical processed data is tracked in the repository for preservation
+# data/processed/ - NOT ignored, included in repo
+
+# Partial downloads (never commit)
 data/downloads/*.part
 data/pending/*.part
 
