@@ -43,23 +43,17 @@ The system consists of six containerized services:
 
 - Docker and Docker Compose
 - 4GB+ RAM recommended
-- 10GB+ disk space for data
-- Git LFS (for cloning historical data - optional for basic usage)
+- 2GB+ disk space (includes historical data and database)
 
 ### Installation
 
-#### Option 1: Fresh Start (Recommended for most users)
-
-Download new data as it becomes available:
-
 1. **Clone the repository**
    ```bash
-   git clone --no-checkout <your-repository-url>
+   git clone https://github.com/jonathanbrooke/ddosia-tracker.git
    cd ddosia-tracker
-   git sparse-checkout init --cone
-   git sparse-checkout set '*' '!data/processed'
-   git checkout
    ```
+
+   The repository includes 2+ years of historical DDoSia target data (2000+ JSON files from October 2023 through October 2025).
 
 2. **Configure environment (optional)**
    ```bash
@@ -72,36 +66,10 @@ Download new data as it becomes available:
    docker compose up -d
    ```
 
-The system will automatically start downloading and processing new DDoSia target lists.
-
-#### Option 2: With Historical Data (Researchers/Archivists)
-
-For complete historical analysis (requires ~500MB download):
-
-1. **Install Git LFS** (if not already installed)
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install git-lfs
-   
-   # macOS
-   brew install git-lfs
-   
-   # Initialize
-   git lfs install
-   ```
-
-2. **Clone with full history**
-   ```bash
-   git clone <your-repository-url>
-   cd ddosia-tracker
-   ```
-
-3. **Build and start services**
-   ```bash
-   docker compose up -d
-   ```
-
-The historical data will be available immediately for analysis.
+   The system will:
+   - Process all historical data from `data/processed/`
+   - Automatically download new DDoSia target lists as they become available
+   - Start the interactive map interface
 
 ### Accessing the Application
 
