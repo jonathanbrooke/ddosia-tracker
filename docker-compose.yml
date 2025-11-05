@@ -106,19 +106,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  gdelt_query:
-    build:
-      context: .
-      dockerfile: gdelt-query.Dockerfile
-    env_file:
-      - .env
-    environment:
-      - GDELT_TIMEOUT=${GDELT_TIMEOUT:-30}
-      - GDELT_REQUEST_DELAY=${GDELT_REQUEST_DELAY:-7}
-    ports:
-      - "${GDELT_QUERY_PORT:-8001}:8001"
-    restart: unless-stopped
-
 volumes:
   data:
   pgdata:

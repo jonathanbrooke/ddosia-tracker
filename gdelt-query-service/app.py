@@ -41,7 +41,8 @@ def query_gdelt():
         "keywords": "search terms",
         "start_date": "YYYY-MM-DD",
         "end_date": "YYYY-MM-DD",
-        "max_results": 10
+        "max_results": 10,
+        "english_only": true
     }
     
     Returns:
@@ -59,6 +60,7 @@ def query_gdelt():
         start_date = data.get("start_date", "").strip()
         end_date = data.get("end_date", "").strip()
         max_results = int(data.get("max_results", 10))
+        english_only = data.get("english_only", True)
         
         if not keywords:
             return jsonify({
@@ -149,12 +151,15 @@ def query_gdelt():
                 article_date = ""
                 if len(seendate) >= 8:
                     try:
-                        article_date = f"{seendate[0:4]}-{seendate[4:6]}-{seendate[6:8]}"
-                    except:
+                        article_date = (
+                            f"{seendate[0:4]}-{seendate[4:6]}-"
+                            f"{seendate[6:8]}"
+                        )
+                    except Exception:
                         article_date = "Unknown"
                 
-                # Filter for English articles (prioritize English)
-                if language != "english":
+                # Filter for English articles if requested
+                if english_only and language != "english":
                     continue
                 
                 processed_articles.append({
@@ -170,43 +175,10 @@ def query_gdelt():
                 logger.warning(f"Error processing article: {e}")
                 continue
         
-        # If we didn't get enough English articles, add non-English ones
-        if len(processed_articles) < max_results:
-            for article in articles:
-                if len(processed_articles) >= max_results:
-                    break
-                
-                try:
-                    title = article.get("title", "No Title")
-                    url = article.get("url", "")
-                    language = article.get("language", "").lower()
-                    
-                    # Skip if already added
-                    if any(a["title"] == title for a in processed_articles):
-                        continue
-                    
-                    domain = article.get("domain", "")
-                    seendate = article.get("seendate", "")
-                    
-                    article_date = ""
-                    if len(seendate) >= 8:
-                        try:
-                            article_date = f"{seendate[0:4]}-{seendate[4:6]}-{seendate[6:8]}"
-                        except:
-                            article_date = "Unknown"
-                    
-                    processed_articles.append({
-                        "title": title[:200],
-                        "url": url,
-                        "domain": domain,
-                        "language": language.capitalize() if language else "Unknown",
-                        "date": article_date,
-                        "seendate": seendate
-                    })
-                    
-                except Exception as e:
-                    logger.warning(f"Error processing article: {e}")
-                    continue
+        # If english_only is False, we already included all languages above
+        # If english_only is True, we may want to fill with non-English if
+        # we didn't get enough English articles (but we'll stick to
+        # English-only when checked for cleaner results)
         
         logger.info(
             f"Returned {len(processed_articles)} articles "

@@ -1,14 +1,26 @@
 import os
 import psycopg2
 import psycopg2.extras
+import requests
+import logging
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s"
+)
+logger = logging.getLogger("map-service")
 
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
 DB_DSN = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@postgres:5432/ddosia")
+
+# GDELT Configuration
+GDELT_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+GDELT_TIMEOUT = int(os.getenv("GDELT_TIMEOUT", "30"))
 
 def get_conn():
     return psycopg2.connect(DB_DSN, cursor_factory=psycopg2.extras.RealDictCursor)
@@ -20,12 +32,17 @@ def parse_date(s):
         return None
 
 @app.route("/")
+@app.route("/map")
 def index():
     return send_from_directory(app.static_folder, "index.html")
 
 @app.route("/health")
 def health_page():
     return send_from_directory(app.static_folder, "health.html")
+
+@app.route("/gdelt")
+def gdelt_page():
+    return send_from_directory(app.static_folder, "gdelt-query.html")
 
 @app.route("/api/tld")
 def tld_aggregate():
@@ -608,6 +625,175 @@ def health_issues():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/api/gdelt/query", methods=["POST"])
+def query_gdelt():
+    """
+    Query GDELT API with user-provided parameters
+    
+    Request body:
+    {
+        "keywords": "search terms",
+        "start_date": "YYYY-MM-DD",
+        "end_date": "YYYY-MM-DD",
+        "max_results": 10,
+        "english_only": true
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "count": 5,
+        "articles": [...]
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Validate input
+        keywords = data.get("keywords", "").strip()
+        start_date = data.get("start_date", "").strip()
+        end_date = data.get("end_date", "").strip()
+        max_results = int(data.get("max_results", 10))
+        english_only = data.get("english_only", True)
+        
+        if not keywords:
+            return jsonify({
+                "success": False,
+                "error": "Keywords are required"
+            }), 400
+        
+        if not start_date or not end_date:
+            return jsonify({
+                "success": False,
+                "error": "Both start and end dates are required"
+            }), 400
+        
+        # Validate and parse dates
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError:
+            return jsonify({
+                "success": False,
+                "error": "Invalid date format. Use YYYY-MM-DD"
+            }), 400
+        
+        if start_dt > end_dt:
+            return jsonify({
+                "success": False,
+                "error": "Start date must be before end date"
+            }), 400
+        
+        # Limit max results
+        max_results = min(max_results, 10)
+        
+        logger.info(
+            f"Querying GDELT: '{keywords}' from {start_date} to {end_date}, "
+            f"max {max_results} results"
+        )
+        
+        # Build GDELT API request
+        params = {
+            "query": keywords,
+            "mode": "artlist",
+            "maxrecords": "100",  # Fetch more to filter for English
+            "format": "json",
+            "startdatetime": start_dt.strftime("%Y%m%d") + "000000",
+            "enddatetime": end_dt.strftime("%Y%m%d") + "235959"
+        }
+        
+        # Make request to GDELT API
+        response = requests.get(
+            GDELT_API_URL,
+            params=params,
+            timeout=GDELT_TIMEOUT
+        )
+        
+        if response.status_code != 200:
+            logger.error(f"GDELT API error: {response.status_code}")
+            return jsonify({
+                "success": False,
+                "error": f"GDELT API returned status {response.status_code}"
+            }), 502
+        
+        gdelt_data = response.json()
+        articles = gdelt_data.get("articles", [])
+        
+        if not articles:
+            return jsonify({
+                "success": True,
+                "count": 0,
+                "articles": [],
+                "message": "No articles found for this query"
+            })
+        
+        # Process and filter articles
+        processed_articles = []
+        for article in articles:
+            if len(processed_articles) >= max_results:
+                break
+            
+            try:
+                # Extract article data
+                title = article.get("title", "No Title")
+                url = article.get("url", "")
+                domain = article.get("domain", "")
+                language = article.get("language", "").lower()
+                seendate = article.get("seendate", "")
+                
+                # Parse date
+                article_date = ""
+                if len(seendate) >= 8:
+                    try:
+                        article_date = (
+                            f"{seendate[0:4]}-{seendate[4:6]}-"
+                            f"{seendate[6:8]}"
+                        )
+                    except Exception:
+                        article_date = "Unknown"
+                
+                # Filter for English articles if requested
+                if english_only and language != "english":
+                    continue
+                
+                processed_articles.append({
+                    "title": title[:200],  # Truncate long titles
+                    "url": url,
+                    "domain": domain,
+                    "language": language.capitalize(),
+                    "date": article_date,
+                    "seendate": seendate
+                })
+                
+            except Exception as e:
+                logger.warning(f"Error processing article: {e}")
+                continue
+        
+        logger.info(
+            f"Returned {len(processed_articles)} articles "
+            f"(from {len(articles)} total)"
+        )
+        
+        return jsonify({
+            "success": True,
+            "count": len(processed_articles),
+            "total_found": len(articles),
+            "articles": processed_articles
+        })
+        
+    except requests.exceptions.Timeout:
+        logger.error("GDELT API timeout")
+        return jsonify({
+            "success": False,
+            "error": "Request to GDELT API timed out"
+        }), 504
+    except Exception as e:
+        logger.error(f"Error in GDELT query: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":

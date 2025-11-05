@@ -76,6 +76,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      text-decoration: none;
     }
     
     .logo::before {
@@ -232,36 +233,22 @@
     }
     
     /* Theme Toggle */
-    #theme-toggle {
+    .theme-toggle {
       background: var(--bg-tertiary);
       border: 1px solid var(--border-color);
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
+      color: var(--text-primary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
       display: flex;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      padding: 0;
-      margin-left: 16px;
+      gap: 6px;
     }
     
-    #theme-toggle:hover {
-      background: var(--accent-cyan);
-      border-color: var(--accent-cyan);
-      transform: rotate(20deg) scale(1.1);
-    }
-    
-    #theme-toggle svg {
-      width: 20px;
-      height: 20px;
-      fill: var(--text-primary);
-      transition: all 0.3s ease;
-    }
-    
-    #theme-toggle:hover svg {
-      fill: white;
+    .theme-toggle:hover {
+      background: var(--bg-primary);
     }
     
     /* Content Area */
@@ -591,12 +578,12 @@
   <!-- Header -->
   <div id="header">
     <div class="header-left">
-      <div class="logo">DDoSia Tracker</div>
-      <nav class="nav-links">
-        <a href="/" class="nav-link active">Map</a>
+      <a href="/map" class="logo">DDoSia Tracker</a>
+      <div class="nav-links">
+        <a href="/map" class="nav-link active">Map</a>
+        <a href="/gdelt" class="nav-link">GDELT Query</a>
         <a href="/health" class="nav-link">Health</a>
-        <a href="http://localhost:8001" class="nav-link" target="_blank">GDELT Query</a>
-      </nav>
+      </div>
     </div>
     <div class="header-stats">
       <div class="stat-item">
@@ -615,13 +602,8 @@
         <div class="stat-label">Last Update</div>
         <div class="stat-value" id="stat-last-update" style="font-size: 14px;">—</div>
       </div>
-      <button id="theme-toggle" title="Toggle dark/light mode">
-        <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
-        </svg>
-        <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
-          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
-        </svg>
+      <button class="theme-toggle" onclick="toggleTheme()">
+        <span id="theme-icon">☀️</span> Toggle Theme
       </button>
     </div>
   </div>
@@ -700,37 +682,30 @@
     let totalTargets = 0;
     
     // Theme toggle functionality
-    const themeToggle = document.getElementById('theme-toggle');
-    const moonIcon = document.getElementById('theme-icon-moon');
-    const sunIcon = document.getElementById('theme-icon-sun');
     const html = document.documentElement;
+    const themeIcon = document.getElementById('theme-icon');
     
-    // Load saved theme or default to dark
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    if (savedTheme === 'light') {
-      html.setAttribute('data-theme', 'light');
-      moonIcon.style.display = 'none';
-      sunIcon.style.display = 'block';
-      updateMapTiles('light');
-    }
-    
-    themeToggle.addEventListener('click', () => {
+    function toggleTheme() {
       const currentTheme = html.getAttribute('data-theme');
       const newTheme = currentTheme === 'light' ? 'dark' : 'light';
       
       html.setAttribute('data-theme', newTheme);
       localStorage.setItem('theme', newTheme);
-      
-      if (newTheme === 'light') {
-        moonIcon.style.display = 'none';
-        sunIcon.style.display = 'block';
-        updateMapTiles('light');
-      } else {
-        moonIcon.style.display = 'block';
-        sunIcon.style.display = 'none';
-        updateMapTiles('dark');
-      }
-    });
+      updateThemeIcon(newTheme);
+      updateMapTiles(newTheme);
+    }
+    
+    function updateThemeIcon(theme) {
+      themeIcon.textContent = theme === 'light' ? '🌙' : '☀️';
+    }
+    
+    // Load saved theme or default to dark
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+    if (savedTheme === 'light') {
+      updateMapTiles('light');
+    }
     
     function updateMapTiles(theme) {
       const tileUrl = theme === 'light' 
@@ -989,9 +964,21 @@
     (async function init(){
       const range = await fetchRange();
       if (range.min && range.max) {
-        // Default to today's data
-        setTodayRange();
-        document.getElementById('status').textContent = `Data range: ${range.min} → ${range.max} (showing today)`;
+        // Check for URL parameters (from GDELT pivot)
+        const urlParams = new URLSearchParams(window.location.search);
+        const fromParam = urlParams.get('from');
+        const toParam = urlParams.get('to');
+        
+        if (fromParam && toParam) {
+          // Use dates from URL parameters
+          document.getElementById('from').value = fromParam;
+          document.getElementById('to').value = toParam;
+          document.getElementById('status').textContent = `Data range: ${range.min} → ${range.max} (filtered from GDELT)`;
+        } else {
+          // Default to today's data
+          setTodayRange();
+          document.getElementById('status').textContent = `Data range: ${range.min} → ${range.max} (showing today)`;
+        }
         await refreshData();
       } else {
         setTodayRange();
@@ -1017,6 +1004,31 @@
     });
     
     document.getElementById('apply').addEventListener('click', refreshData);
+
+    // Update GDELT navigation link with current date range
+    function updateGdeltLinkWithDateRange() {
+      const fromDate = document.getElementById('from').value;
+      const toDate = document.getElementById('to').value;
+      
+      if (fromDate && toDate) {
+        const params = `?from=${fromDate}&to=${toDate}`;
+        const gdeltLink = document.querySelector('a[href^="/gdelt"]');
+        if (gdeltLink) gdeltLink.href = `/gdelt${params}`;
+      }
+    }
+
+    // Update GDELT link when dates change
+    document.getElementById('from').addEventListener('change', updateGdeltLinkWithDateRange);
+    document.getElementById('to').addEventListener('change', updateGdeltLinkWithDateRange);
+    document.getElementById('btn-today').addEventListener('click', () => {
+      setTimeout(updateGdeltLinkWithDateRange, 100);
+    });
+    document.getElementById('btn-week').addEventListener('click', () => {
+      setTimeout(updateGdeltLinkWithDateRange, 100);
+    });
+    
+    // Initialize GDELT link on load
+    setTimeout(updateGdeltLinkWithDateRange, 500);
   </script>
 </body>
 </html>

@@ -612,11 +612,11 @@
   <!-- Header -->
   <div id="header">
     <div class="header-left">
-      <a href="http://localhost:8000" class="logo">DDoSia Tracker</a>
+      <a href="/map" class="logo">DDoSia Tracker</a>
       <div class="nav-links">
-        <a href="http://localhost:8000" class="nav-link">Map</a>
-        <a href="/" class="nav-link active">GDELT Query</a>
-        <a href="http://localhost:8000/static/health.html" class="nav-link">Health</a>
+        <a href="/map" class="nav-link">Map</a>
+        <a href="/gdelt" class="nav-link active">GDELT Query</a>
+        <a href="/health" class="nav-link">Health</a>
       </div>
     </div>
     <div class="header-right">
@@ -793,13 +793,27 @@
     document.documentElement.setAttribute('data-theme', savedTheme);
     updateThemeIcon(savedTheme);
 
-    // Set default dates (last 7 days)
-    const today = new Date();
-    const weekAgo = new Date(today);
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    // Set default dates (last 7 days) or from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromParam = urlParams.get('from');
+    const toParam = urlParams.get('to');
     
-    document.getElementById('endDate').valueAsDate = today;
-    document.getElementById('startDate').valueAsDate = weekAgo;
+    if (fromParam && toParam) {
+      // Use dates from URL parameters (from Map pivot)
+      document.getElementById('startDate').value = fromParam;
+      document.getElementById('endDate').value = toParam;
+    } else {
+      // Default to last 7 days
+      const today = new Date();
+      const weekAgo = new Date(today);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      
+      document.getElementById('endDate').valueAsDate = today;
+      document.getElementById('startDate').valueAsDate = weekAgo;
+    }
+
+    // Update nav links with current dates
+    updateNavLinksWithDateRange();
 
     // Today button functions
     function setStartToday() {
@@ -835,7 +849,7 @@
       searchButton.innerHTML = '<span>⏳</span> Searching...';
       
       try {
-        const response = await fetch('/api/query', {
+        const response = await fetch('/api/gdelt/query', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -904,12 +918,15 @@
         card.className = 'article-card';
         card.style.animationDelay = `${index * 0.05}s`;
         
+        // Format date nicely
+        const formattedDate = formatDate(article.date);
+        
         card.innerHTML = `
           <div class="article-header">
             <div class="article-title">${escapeHtml(article.title)}</div>
           </div>
           <div class="article-meta">
-            <span class="meta-badge date">📅 ${article.date || 'Unknown date'}</span>
+            <span class="meta-badge date" title="${article.date}">📅 ${formattedDate}</span>
             <span class="meta-badge language">🌐 ${article.language || 'Unknown'}</span>
           </div>
           <div class="article-domain">🔗 ${escapeHtml(article.domain || 'Unknown source')}</div>
@@ -924,11 +941,45 @@
       resultsSection.style.display = 'block';
     }
 
+    function formatDate(dateStr) {
+      if (!dateStr || dateStr === 'Unknown') return 'Unknown date';
+      
+      try {
+        const date = new Date(dateStr);
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+      } catch (e) {
+        return dateStr;
+      }
+    }
+
     function escapeHtml(text) {
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
+
+    // Update Map and Health navigation links to include date range parameters
+    function updateNavLinksWithDateRange() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      
+      if (startDate && endDate) {
+        const params = `?from=${startDate}&to=${endDate}`;
+        const mapLink = document.querySelector('a[href^="/map"]');
+        const healthLink = document.querySelector('a[href^="/health"]');
+        
+        if (mapLink) mapLink.href = `/map${params}`;
+        if (healthLink) healthLink.href = `/health${params}`;
+      }
+    }
+
+    // Update navigation links when dates change
+    document.getElementById('startDate').addEventListener('change', updateNavLinksWithDateRange);
+    document.getElementById('endDate').addEventListener('change', updateNavLinksWithDateRange);
+    
+    // Initialize with current dates on load
+    window.addEventListener('load', updateNavLinksWithDateRange);
   </script>
 </body>
 </html>

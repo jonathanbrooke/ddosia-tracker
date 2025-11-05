@@ -23,7 +23,7 @@ A distributed monitoring and analytics system that tracks DDoSia attack campaign
 
 ## 🏗️ Architecture
 
-The system consists of seven containerized services:
+The system consists of six containerized services:
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
@@ -35,23 +35,21 @@ The system consists of seven containerized services:
          ┌──────▼──────┐            ┌───────────▼──────┐  ┌───────▼────────┐
          │ Map Service │            │   Map Updater    │  │ GDELT Worker   │
          │  (Web UI)   │            │     Worker       │  │  (Backfill)    │
-         └─────────────┘            └──────────────────┘  └────────────────┘
-                                              │
-                                    ┌─────────▼──────────┐
-                                    │  GDELT Query UI    │
-                                    │   (Interactive)    │
-                                    └────────────────────┘
+         │             │            └──────────────────┘  └────────────────┘
+         │ - /map      │
+         │ - /health   │
+         │ - /gdelt    │
+         └─────────────┘
 ```
 
 ### Services
 
 1. **Downloader**: Monitors source URL for new JSON files and downloads them
 2. **Processor**: Parses JSON files, deduplicates targets, and stores in PostgreSQL
-3. **Map Service**: Flask web application providing REST API and interactive map
+3. **Map Service**: Flask web application with REST API, interactive map, health dashboard, and GDELT query interface
 4. **Map Updater**: Maintains TLD-to-country mappings and enriches target data
 5. **GDELT Worker**: Fetches geopolitical events correlated with attack dates (backfill)
-6. **GDELT Query**: Interactive web UI for searching GDELT news articles by keywords
-7. **PostgreSQL**: Central database storing targets, events, and metadata
+6. **PostgreSQL**: Central database storing targets, events, and metadata
 
 ## 🚀 Quick Start
 
@@ -89,8 +87,8 @@ The system consists of seven containerized services:
 
 ### Accessing the Application
 
-4. **Access the applications**
-   - **Map Interface**: http://localhost:8000
+4. **Access the applications** - All interfaces available at http://localhost:8000
+   - **Map Interface**: http://localhost:8000/map
      
      ![Map Dashboard](screenshots/dashboard.png)
    
@@ -98,7 +96,7 @@ The system consists of seven containerized services:
      
      ![Health Dashboard](screenshots/health.png)
    
-   - **GDELT Query**: http://localhost:8001
+   - **GDELT Query**: http://localhost:8000/gdelt
      
      Search global news articles from the GDELT Project database with custom keywords and date ranges
 
@@ -165,7 +163,7 @@ Access `http://localhost:8000/health` to monitor:
 
 ### GDELT Query
 
-Navigate to `http://localhost:8001` to search GDELT news articles:
+Navigate to `http://localhost:8000/gdelt` to search GDELT news articles:
 
 - Enter search keywords (e.g., "cyber attack", "Ukraine war", "ransomware")
 - Select a date range using the date pickers
@@ -186,11 +184,7 @@ The Map Service provides several REST API endpoints:
 - `GET /api/tld/available-range` - Available date range
 - `GET /api/last-update` - Most recent data timestamp
 - `GET /api/health/*` - Various health check endpoints
-
-The GDELT Query Service provides:
-
-- `POST /api/query` - Query GDELT articles with keywords and date range
-- `GET /health` - Service health check
+- `POST /api/gdelt/query` - Query GDELT articles with keywords and date range
 
 ### Database Access
 
