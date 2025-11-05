@@ -23,19 +23,24 @@ A distributed monitoring and analytics system that tracks DDoSia attack campaign
 
 ## 🏗️ Architecture
 
-The system consists of six containerized services:
+The system consists of seven containerized services:
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
 │ Downloader  │────▶│  Processor   │────▶│  PostgreSQL │
 └─────────────┘     └──────────────┘     └──────┬──────┘
                                                  │
-                    ┌────────────────────────────┼──────────────┐
-                    │                            │              │
-             ┌──────▼──────┐            ┌───────▼──────┐  ┌───▼────┐
-             │ Map Service │            │ Map Updater  │  │ GDELT  │
-             │  (Web UI)   │            │   Worker     │  │ Worker │
-             └─────────────┘            └──────────────┘  └────────┘
+                ┌────────────────────────────────┼──────────────────┐
+                │                                │                  │
+         ┌──────▼──────┐            ┌───────────▼──────┐  ┌───────▼────────┐
+         │ Map Service │            │   Map Updater    │  │ GDELT Worker   │
+         │  (Web UI)   │            │     Worker       │  │  (Backfill)    │
+         └─────────────┘            └──────────────────┘  └────────────────┘
+                                              │
+                                    ┌─────────▼──────────┐
+                                    │  GDELT Query UI    │
+                                    │   (Interactive)    │
+                                    └────────────────────┘
 ```
 
 ### Services
@@ -44,8 +49,9 @@ The system consists of six containerized services:
 2. **Processor**: Parses JSON files, deduplicates targets, and stores in PostgreSQL
 3. **Map Service**: Flask web application providing REST API and interactive map
 4. **Map Updater**: Maintains TLD-to-country mappings and enriches target data
-5. **GDELT Worker**: Fetches geopolitical events correlated with attack dates
-6. **PostgreSQL**: Central database storing targets, events, and metadata
+5. **GDELT Worker**: Fetches geopolitical events correlated with attack dates (backfill)
+6. **GDELT Query**: Interactive web UI for searching GDELT news articles by keywords
+7. **PostgreSQL**: Central database storing targets, events, and metadata
 
 ## 🚀 Quick Start
 
@@ -91,6 +97,10 @@ The system consists of six containerized services:
    - **Health Dashboard**: http://localhost:8000/health
      
      ![Health Dashboard](screenshots/health.png)
+   
+   - **GDELT Query**: http://localhost:8001
+     
+     Search global news articles from the GDELT Project database with custom keywords and date ranges
 
 ## ⚙️ Configuration
 
@@ -153,6 +163,19 @@ Access `http://localhost:8000/health` to monitor:
 - Data quality metrics
 - Service health status
 
+### GDELT Query
+
+Navigate to `http://localhost:8001` to search GDELT news articles:
+
+- Enter search keywords (e.g., "cyber attack", "Ukraine war", "ransomware")
+- Select a date range using the date pickers
+- Set maximum results (1-10 articles)
+- Click "Search GDELT" to query the database
+- Results appear as cards with article title, source, date, and language
+- Click "Read full article" to view the original source
+
+The interface respects GDELT API rate limits and prioritizes English-language articles.
+
 ### API Endpoints
 
 The Map Service provides several REST API endpoints:
@@ -163,6 +186,11 @@ The Map Service provides several REST API endpoints:
 - `GET /api/tld/available-range` - Available date range
 - `GET /api/last-update` - Most recent data timestamp
 - `GET /api/health/*` - Various health check endpoints
+
+The GDELT Query Service provides:
+
+- `POST /api/query` - Query GDELT articles with keywords and date range
+- `GET /health` - Service health check
 
 ### Database Access
 
