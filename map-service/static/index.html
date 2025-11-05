@@ -250,6 +250,51 @@
     .theme-toggle:hover {
       background: var(--bg-primary);
     }
+
+    /* Track New Targets Toggle */
+    .track-toggle {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .track-toggle:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .track-toggle.active {
+      background: var(--accent-green);
+      color: white;
+      border-color: var(--accent-green);
+    }
+
+    .track-toggle input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      margin: 0;
+    }
+
+    .track-toggle .new-count {
+      background: var(--accent-red);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      min-width: 20px;
+      text-align: center;
+    }
     
     /* Content Area */
     #content {
@@ -348,6 +393,31 @@
     tr:hover {
       background: var(--bg-tertiary);
       cursor: pointer;
+    }
+
+    tr.new-target {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+      border-left: 3px solid var(--accent-green);
+    }
+
+    tr.new-target:hover {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, var(--bg-tertiary) 100%);
+    }
+
+    tr.new-target .domain-cell::after {
+      content: "NEW";
+      margin-left: 8px;
+      padding: 2px 6px;
+      background: var(--accent-green);
+      color: white;
+      font-size: 9px;
+      font-weight: 700;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+
+    tr.new-target .count-cell {
+      color: var(--accent-green);
     }
     
     .count-cell {
@@ -602,6 +672,11 @@
         <div class="stat-label">Last Update</div>
         <div class="stat-value" id="stat-last-update" style="font-size: 14px;">—</div>
       </div>
+      <label class="track-toggle" id="trackToggle">
+        <input type="checkbox" id="trackNewTargets">
+        <span>📍 Track Latest</span>
+        <span class="new-count" id="newTargetsCount" style="display: none;">0</span>
+      </label>
       <button class="theme-toggle" onclick="toggleTheme()">
         <span id="theme-icon">☀️</span> Toggle Theme
       </button>
@@ -840,8 +915,32 @@
     function renderTable(rows) {
       const tb = document.querySelector('#domains-table tbody');
       tb.innerHTML = '';
-      rows.forEach(r => {
+      
+      // Check if tracking is enabled and mark new targets
+      const trackingEnabled = document.getElementById('trackNewTargets').checked;
+      const newTargets = trackingEnabled ? (window.recentTargets || new Set()) : new Set();
+      
+      // Sort: if tracking enabled, put new targets first
+      let sortedRows = [...rows];
+      if (trackingEnabled && newTargets.size > 0) {
+        sortedRows.sort((a, b) => {
+          const aIsNew = newTargets.has(a.domain);
+          const bIsNew = newTargets.has(b.domain);
+          if (aIsNew && !bIsNew) return -1;
+          if (!aIsNew && bIsNew) return 1;
+          return b.count - a.count; // Keep count ordering within each group
+        });
+      }
+      
+      sortedRows.forEach(r => {
         const tr = document.createElement('tr');
+        
+        // Mark row as new if domain is in recent targets
+        if (newTargets.has(r.domain)) {
+          tr.classList.add('new-target');
+          tr.title = `From latest JSON import`;
+        }
+        
         tr.innerHTML = `
           <td class="domain-cell">${r.domain}</td>
           <td class="country-cell">${r.country}</td>
@@ -861,7 +960,15 @@
         });
         tb.appendChild(tr);
       });
-      document.getElementById('table-info').textContent = `${rows.length} domains • Click to zoom`;
+      
+      // Update info text
+      const newCount = newTargets.size;
+      const totalCount = rows.length;
+      if (trackingEnabled && newCount > 0) {
+        document.getElementById('table-info').textContent = `${newCount} from latest import • ${totalCount} total • Click to zoom`;
+      } else {
+        document.getElementById('table-info').textContent = `${totalCount} domains • Click to zoom`;
+      }
     }
 
     function renderEvents(events) {
@@ -1004,6 +1111,62 @@
     });
     
     document.getElementById('apply').addEventListener('click', refreshData);
+
+    // Track New Targets functionality
+    window.recentTargets = new Set();
+    let trackingInterval = null;
+
+    async function fetchRecentTargets() {
+      try {
+        const response = await fetch('/api/domains/recent?limit=10000');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          window.recentTargets = new Set(data.map(d => d.domain));
+          
+          // Update count badge
+          const countBadge = document.getElementById('newTargetsCount');
+          if (window.recentTargets.size > 0) {
+            countBadge.textContent = window.recentTargets.size;
+            countBadge.style.display = 'inline-block';
+          } else {
+            countBadge.style.display = 'none';
+          }
+          
+          // Re-render table if tracking is enabled
+          if (document.getElementById('trackNewTargets').checked) {
+            await refreshData();
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching recent targets:', error);
+      }
+    }
+
+    // Track New Targets toggle handler
+    document.getElementById('trackNewTargets').addEventListener('change', async (e) => {
+      const trackToggle = document.getElementById('trackToggle');
+      
+      if (e.target.checked) {
+        trackToggle.classList.add('active');
+        await fetchRecentTargets();
+        // Refresh every 5 minutes when tracking is enabled
+        trackingInterval = setInterval(fetchRecentTargets, 300000);
+      } else {
+        trackToggle.classList.remove('active');
+        if (trackingInterval) {
+          clearInterval(trackingInterval);
+          trackingInterval = null;
+        }
+        // Re-render to remove highlights
+        await refreshData();
+      }
+    });
+
+    // Initial fetch of recent targets (but don't enable tracking by default)
+    fetchRecentTargets();
+    // Refresh recent targets every 5 minutes
+    setInterval(fetchRecentTargets, 300000);
 
     // Update GDELT navigation link with current date range
     function updateGdeltLinkWithDateRange() {

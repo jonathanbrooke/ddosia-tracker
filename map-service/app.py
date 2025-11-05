@@ -3,7 +3,7 @@ import psycopg2
 import psycopg2.extras
 import requests
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 
@@ -267,19 +267,22 @@ def domains_list():
     ts_to = datetime.combine(d_to, datetime.max.time()).replace(tzinfo=timezone.utc)
 
     sql = """
-    SELECT
-      t.normalized_host AS domain,
-      lower(regexp_replace(t.normalized_host, '.*\\.', '')) AS tld,
-      COALESCE(t.country, 'unknown') AS country,
-      COUNT(*) AS cnt
-    FROM targets t
-    JOIN files f ON t.file_id = f.id
-    WHERE f.fetched_at >= %(from)s AND f.fetched_at <= %(to)s
-      AND (t.normalized_host IS NOT NULL AND t.normalized_host <> '')
-    GROUP BY t.normalized_host,
-             lower(regexp_replace(t.normalized_host, '.*\\.', '')),
-             COALESCE(t.country, 'unknown')
-    ORDER BY cnt DESC
+    WITH domain_stats AS (
+      SELECT
+        t.normalized_host AS domain,
+        lower(regexp_replace(t.normalized_host, '.*\\.', '')) AS tld,
+        COALESCE(t.country, 'unknown') AS country,
+        COUNT(*) AS cnt,
+        MIN(f.fetched_at) AS first_seen
+      FROM targets t
+      JOIN files f ON t.file_id = f.id
+      WHERE f.fetched_at >= %(from)s AND f.fetched_at <= %(to)s
+        AND (t.normalized_host IS NOT NULL AND t.normalized_host <> '')
+      GROUP BY t.normalized_host, t.country
+    )
+    SELECT domain, tld, country, cnt, first_seen
+    FROM domain_stats
+    ORDER BY first_seen DESC, domain ASC
     LIMIT %(limit)s
     """
     params = {"from": ts_from, "to": ts_to, "limit": limit}
@@ -297,10 +300,73 @@ def domains_list():
             "domain": r["domain"],
             "tld": r["tld"],
             "country": r["country"],
-            "count": int(r["cnt"])
+            "count": int(r["cnt"]),
+            "first_seen": r["first_seen"].isoformat() if r["first_seen"] else None
         }
         for r in rows
     ]
+    return jsonify(results)
+
+
+@app.route("/api/domains/recent")
+def recent_domains():
+    """
+    Returns domains that appeared in the most recently ingested file.
+    Query params:
+      limit=int (optional, default 10000, max 10000)
+    Returns: [{domain, tld, country, last_seen, hours_ago}]
+    """
+    try:
+        limit = min(int(request.args.get("limit", "10000")), 10000)
+    except ValueError:
+        return jsonify({"error": "limit must be a valid integer"}), 400
+
+    # Get domains from the most recent file only
+    sql = """
+    WITH latest_file AS (
+      SELECT id, fetched_at
+      FROM files
+      ORDER BY fetched_at DESC
+      LIMIT 1
+    )
+    SELECT DISTINCT
+      t.normalized_host AS domain,
+      lower(regexp_replace(t.normalized_host, '.*\\.', '')) AS tld,
+      COALESCE(t.country, 'unknown') AS country,
+      lf.fetched_at AS last_seen
+    FROM targets t
+    JOIN latest_file lf ON t.file_id = lf.id
+    WHERE (t.normalized_host IS NOT NULL AND t.normalized_host <> '')
+    ORDER BY t.normalized_host
+    LIMIT %(limit)s
+    """
+    params = {"limit": limit}
+
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                rows = cur.fetchall()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    now = datetime.now(timezone.utc)
+    results = []
+    for r in rows:
+        last_seen = r["last_seen"]
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)
+        
+        hours_ago = (now - last_seen).total_seconds() / 3600
+        
+        results.append({
+            "domain": r["domain"],
+            "tld": r["tld"],
+            "country": r["country"],
+            "last_seen": last_seen.isoformat(),
+            "hours_ago": round(hours_ago, 1)
+        })
+    
     return jsonify(results)
 
 
